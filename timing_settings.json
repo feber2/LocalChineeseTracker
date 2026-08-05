@@ -1,0 +1,7 @@
+{
+    "write_interval": 0.05,
+    "post_search_delay": 0.15,
+    "click_delay": 0.05,
+    "swap_clear_delay": 0.15,
+    "pair_interval_delay": 0.15
+}
