@@ -538,11 +538,6 @@ class SleekPoEArbitrageGUI(tk.Tk):
         select_currency_in_slot(coords["I_WANT_SEARCH_BOX"], coords["I_WANT_TOP_RESULT"], want_search, timing)
         if self.stop_requested: return None, None
 
-        # Proactive clean before Direction 1
-        clear_box_value(coords["I_HAVE_PRICE_BOX"], timing)
-        clear_box_value(coords["I_WANT_PRICE_BOX"], timing)
-        time.sleep(timing.get("swap_clear_delay", 0.15))
-
         # 3. Read Direction 1
         raw_have_1 = read_box_value(coords["I_HAVE_PRICE_BOX"], timing)
         raw_want_1 = read_box_value(coords["I_WANT_PRICE_BOX"], timing)
