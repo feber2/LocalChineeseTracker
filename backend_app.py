@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import time
+import threading
 import urllib.request
 import argparse
 import pyautogui
@@ -79,38 +80,38 @@ def save_json(filepath, data):
         print(f"Failed to save {filepath}: {e}")
 
 
-async def click_point(coord, delay=0.05, clicks=1):
+def click_point(coord, delay=0.05, clicks=1):
     pyautogui.moveTo(coord["x"], coord["y"])
-    await asyncio.sleep(0.04)
+    time.sleep(0.04)
     pyautogui.click(clicks=clicks)
-    await asyncio.sleep(delay)
+    time.sleep(delay)
 
 
-async def select_currency_in_slot(search_box_coord, top_result_coord, keyword, timing):
-    await click_point(search_box_coord, delay=timing.get("click_delay", 0.05))
+def select_currency_in_slot(search_box_coord, top_result_coord, keyword, timing):
+    click_point(search_box_coord, delay=timing.get("click_delay", 0.05))
     pyautogui.hotkey('ctrl', 'a')
     pyautogui.press('backspace')
     pyautogui.write(keyword, interval=timing.get("write_interval", 0.02))
-    await asyncio.sleep(timing.get("post_search_delay", 0.15))
-    await click_point(top_result_coord, delay=timing.get("click_delay", 0.05))
+    time.sleep(timing.get("post_search_delay", 0.15))
+    click_point(top_result_coord, delay=timing.get("click_delay", 0.05))
 
 
-async def read_box_value(box_coord, timing):
+def read_box_value(box_coord, timing):
     pyperclip.copy("")
-    await click_point(box_coord, delay=timing.get("click_delay", 0.05))
+    click_point(box_coord, delay=timing.get("click_delay", 0.05))
     pyautogui.hotkey('ctrl', 'a')
-    await asyncio.sleep(0.03)
+    time.sleep(0.03)
     pyautogui.hotkey('ctrl', 'c')
-    await asyncio.sleep(0.04)
+    time.sleep(0.04)
     return pyperclip.paste().strip()
 
 
-async def clear_box_value(box_coord, timing):
-    await click_point(box_coord, delay=timing.get("click_delay", 0.05))
+def clear_box_value(box_coord, timing):
+    click_point(box_coord, delay=timing.get("click_delay", 0.05))
     pyautogui.hotkey('ctrl', 'a')
-    await asyncio.sleep(0.03)
+    time.sleep(0.03)
     pyautogui.press('backspace')
-    await asyncio.sleep(timing.get("swap_clear_delay", 0.15))
+    time.sleep(timing.get("swap_clear_delay", 0.15))
 
 
 class ScannerEngine:
@@ -119,6 +120,7 @@ class ScannerEngine:
         self.stop_requested = False
         self.scanned_records = []
         self.connected_websockets = []
+        self.loop = None
         
     async def broadcast(self, message: dict):
         for ws in self.connected_websockets:
@@ -127,65 +129,69 @@ class ScannerEngine:
             except Exception:
                 pass
 
-    async def scan_single_pair_bid_ask(self, have_search, want_search, coords, timing, unit_name="Chaos"):
-        await select_currency_in_slot(coords["I_HAVE_SEARCH_BOX"], coords["I_HAVE_TOP_RESULT"], have_search, timing)
+    def broadcast_sync(self, message: dict):
+        if self.loop and self.loop.is_running():
+            asyncio.run_coroutine_threadsafe(self.broadcast(message), self.loop)
+
+    def scan_single_pair_bid_ask(self, have_search, want_search, coords, timing, unit_name="Chaos"):
+        select_currency_in_slot(coords["I_HAVE_SEARCH_BOX"], coords["I_HAVE_TOP_RESULT"], have_search, timing)
         if self.stop_requested: return None, None
 
-        await select_currency_in_slot(coords["I_WANT_SEARCH_BOX"], coords["I_WANT_TOP_RESULT"], want_search, timing)
+        select_currency_in_slot(coords["I_WANT_SEARCH_BOX"], coords["I_WANT_TOP_RESULT"], want_search, timing)
         if self.stop_requested: return None, None
 
-        await clear_box_value(coords["I_HAVE_PRICE_BOX"], timing)
-        await clear_box_value(coords["I_WANT_PRICE_BOX"], timing)
-        await asyncio.sleep(timing.get("swap_clear_delay", 0.15))
+        clear_box_value(coords["I_HAVE_PRICE_BOX"], timing)
+        clear_box_value(coords["I_WANT_PRICE_BOX"], timing)
+        time.sleep(timing.get("swap_clear_delay", 0.15))
 
-        raw_have_1 = await read_box_value(coords["I_HAVE_PRICE_BOX"], timing)
-        raw_want_1 = await read_box_value(coords["I_WANT_PRICE_BOX"], timing)
+        raw_have_1 = read_box_value(coords["I_HAVE_PRICE_BOX"], timing)
+        raw_want_1 = read_box_value(coords["I_WANT_PRICE_BOX"], timing)
         parsed_dir1 = rate_parser.calculate_buying_rate(raw_have_1, raw_want_1, unit_name=unit_name)
 
         pyautogui.moveTo(coords["I_HAVE_SEARCH_BOX"]["x"], coords["I_HAVE_SEARCH_BOX"]["y"])
-        await asyncio.sleep(0.04)
+        time.sleep(0.04)
         pyautogui.keyDown('ctrl')
         pyautogui.click()
         pyautogui.keyUp('ctrl')
-        await asyncio.sleep(timing.get("click_delay", 0.05))
+        time.sleep(timing.get("click_delay", 0.05))
 
-        await clear_box_value(coords["I_HAVE_PRICE_BOX"], timing)
-        await clear_box_value(coords["I_WANT_PRICE_BOX"], timing)
-        await asyncio.sleep(timing.get("swap_clear_delay", 0.15))
+        clear_box_value(coords["I_HAVE_PRICE_BOX"], timing)
+        clear_box_value(coords["I_WANT_PRICE_BOX"], timing)
+        time.sleep(timing.get("swap_clear_delay", 0.15))
 
-        raw_have_2 = await read_box_value(coords["I_HAVE_PRICE_BOX"], timing)
-        raw_want_2 = await read_box_value(coords["I_WANT_PRICE_BOX"], timing)
+        raw_have_2 = read_box_value(coords["I_HAVE_PRICE_BOX"], timing)
+        raw_want_2 = read_box_value(coords["I_WANT_PRICE_BOX"], timing)
         parsed_dir2 = rate_parser.calculate_selling_rate(raw_have_2, raw_want_2, unit_name=unit_name)
 
         return parsed_dir1, parsed_dir2
 
-    async def scan_loop(self):
+    def scan_loop(self):
         coords = load_json(COORDS_FILE, DEFAULT_COORDINATES)
         timing = load_json(TIMING_FILE, DEFAULT_TIMING)
         currencies = load_json(CURRENCY_FILE, [])
         
         if coords.get("I_HAVE_SEARCH_BOX", {}).get("x", 0) == 0:
-            await self.broadcast({"type": "error", "message": "Calibrate UI coordinates first!"})
+            self.broadcast_sync({"type": "error", "message": "Calibrate UI coordinates first!"})
             self.is_scanning = False
             return
 
         enabled_currencies = [c for c in currencies if c.get("enabled", True) and c["name"] not in ["Divine Orb", "Chaos Orb"]]
         
         if not enabled_currencies:
-            await self.broadcast({"type": "error", "message": "No currencies enabled!"})
+            self.broadcast_sync({"type": "error", "message": "No currencies enabled!"})
             self.is_scanning = False
             return
 
         self.scanned_records.clear()
 
-        await self.broadcast({"type": "status", "message": "BENCHMARK SCAN: Divine Orb <-> Chaos Orb..."})
-        div_chaos_dir1, div_chaos_dir2 = await self.scan_single_pair_bid_ask("Divine Orb", "Chaos Orb", coords, timing)
+        self.broadcast_sync({"type": "status", "message": "BENCHMARK SCAN: Divine Orb <-> Chaos Orb..."})
+        div_chaos_dir1, div_chaos_dir2 = self.scan_single_pair_bid_ask("Divine Orb", "Chaos Orb", coords, timing)
 
         base_divine_rate = 180.0
         if div_chaos_dir1 and div_chaos_dir1.get("items_per_chaos"):
             base_divine_rate = div_chaos_dir1["items_per_chaos"]
 
-        await self.broadcast({"type": "base_rate", "rate": base_divine_rate})
+        self.broadcast_sync({"type": "base_rate", "rate": base_divine_rate})
 
         for idx, item in enumerate(enabled_currencies, start=1):
             if self.stop_requested or not self.is_scanning:
@@ -193,14 +199,14 @@ class ScannerEngine:
 
             item_name = item["name"]
             search_term = item["search_term"]
-            await self.broadcast({"type": "status", "message": f"SCANNING ({idx}/{len(enabled_currencies)}): {item_name} (Chaos & Divine)"})
-            await asyncio.sleep(0.01) # Yield to event loop
+            self.broadcast_sync({"type": "status", "message": f"SCANNING ({idx}/{len(enabled_currencies)}): {item_name} (Chaos & Divine)"})
+            time.sleep(0.01)
 
             try:
-                chaos_dir1, chaos_dir2 = await self.scan_single_pair_bid_ask("Chaos Orb", search_term, coords, timing, unit_name="Chaos")
+                chaos_dir1, chaos_dir2 = self.scan_single_pair_bid_ask("Chaos Orb", search_term, coords, timing, unit_name="Chaos")
                 if self.stop_requested: break
 
-                divine_dir1, divine_dir2 = await self.scan_single_pair_bid_ask("Divine Orb", search_term, coords, timing, unit_name="Divine")
+                divine_dir1, divine_dir2 = self.scan_single_pair_bid_ask("Divine Orb", search_term, coords, timing, unit_name="Divine")
                 if self.stop_requested: break
 
                 chaos_rates = {"parsed_dir1": chaos_dir1, "parsed_dir2": chaos_dir2}
@@ -233,21 +239,21 @@ class ScannerEngine:
                 }
 
                 self.scanned_records.append(record)
-                await self.broadcast({"type": "record", "data": record})
+                self.broadcast_sync({"type": "record", "data": record})
                 
                 # Generate report md
                 reporter.generate_market_report(self.scanned_records, base_divine_rate, report_file_path=REPORT_FILE)
 
-                await asyncio.sleep(timing.get("pair_interval_delay", 0.20))
+                time.sleep(timing.get("pair_interval_delay", 0.20))
 
             except Exception as e:
                 print(f"[!] Error scanning {item_name}: {e}")
 
         if not self.stop_requested:
-            await self.broadcast({"type": "status", "message": "STATUS: ARBITRAGE SCAN COMPLETE!"})
+            self.broadcast_sync({"type": "status", "message": "STATUS: ARBITRAGE SCAN COMPLETE!"})
         
         self.is_scanning = False
-        await self.broadcast({"type": "scan_finished"})
+        self.broadcast_sync({"type": "scan_finished"})
 
 
 engine = ScannerEngine()
@@ -267,12 +273,18 @@ def get_report():
     return {"report": "1.0 Press F1 or START SCAN to begin live data extraction..."}
 
 @app.post("/api/start")
-async def start_scan():
+def start_scan():
     if engine.is_scanning:
         return {"status": "already running"}
     engine.is_scanning = True
     engine.stop_requested = False
-    asyncio.create_task(engine.scan_loop())
+    
+    try:
+        engine.loop = asyncio.get_running_loop()
+    except RuntimeError:
+        engine.loop = None
+        
+    threading.Thread(target=engine.scan_loop, daemon=True).start()
     return {"status": "started"}
 
 @app.post("/api/stop")
