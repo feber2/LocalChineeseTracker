@@ -1,6 +1,6 @@
-# ⚡ Path of Exile - Faustus Currency Arbitrage Suite
+# ⚡ *** - ***stus Currency Arbitrage Suite
 
-A high-performance, modular desktop GUI application and OCR/Clipboard data extraction engine for **Path of Exile** (Settlers of Kalguur / Currency Exchange UI).
+A high-performance, modular desktop GUI application and OCR/Clipboard data extraction engine for ******* Currency Exchange UI.
 
 ## 🚀 Key Features
 
