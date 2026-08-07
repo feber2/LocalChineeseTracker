@@ -161,7 +161,7 @@ function App() {
     <div className="content-area animate-fade">
       <div className="glass" style={{padding: '30px', borderRadius: '12px'}}>
         <h2 style={{marginTop: 0, color: 'var(--accent-gold)'}}>Speed & Timing Delays</h2>
-        <div className="settings-grid">
+        <div className="settings-grid timing-grid">
           {Object.keys(timing).map(k => (
             <div className="settings-group" key={k}>
               <label>{k.replace(/_/g, ' ').toUpperCase()}</label>
