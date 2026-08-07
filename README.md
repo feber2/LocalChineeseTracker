@@ -20,7 +20,7 @@ A high-performance, modular desktop GUI application and OCR/Clipboard data extra
 - `arbitrage_engine.py`: Math engine for */* triangulation and ROI calculations.
 - `rate_parser.py`: Parser for raw clipboard text, fractional ratios, and dynamic decimal precision.
 - `reporter.py`: Auto-generates `market_report.md` snapshots after every scan pass.
-- `currency_registry.json`: JSON configuration for managed currencies and Faustus search terms.
+- `currency_registry.json`: JSON configuration for managed currencies and * search terms.
 - `timing_settings.json`: User-configured mouse and keyboard delay settings.
 
 ## 📦 How to Run
