@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Target, Key, RefreshCw, Activity, Settings, ChevronDown, Crosshair, Clock, List } from 'lucide-react';
+import { Target, Key, RefreshCw, Activity, Settings, ChevronDown, Crosshair, Clock, List, ShoppingCart } from 'lucide-react';
 import Scanner from './Scanner.jsx';
+import AutoTrader from './AutoTrader.jsx';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
@@ -158,7 +159,8 @@ function App() {
     timing: 'Speed & Delays Configuration',
     currencies: 'Monitored Currency List',
     apiconfig: 'Headhunting API Key Configuration',
-    opportunities: 'Headhunting Opportunities'
+    opportunities: 'Headhunting Opportunities',
+    bot: 'Auto Trader (Bot)'
   };
 
   return (
@@ -173,6 +175,10 @@ function App() {
         <div className="nav-menu">
           <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
             <Activity size={18} /> Dashboard
+          </div>
+
+          <div className={`nav-item ${activeTab === 'bot' ? 'active' : ''}`} onClick={() => setActiveTab('bot')}>
+            <ShoppingCart size={18} /> Auto Trader
           </div>
 
           <div className={`nav-item ${activeTab === 'opportunities' ? 'active' : ''}`} onClick={() => setActiveTab('opportunities')}>
@@ -224,6 +230,7 @@ function App() {
           />
         )}
         {activeTab === 'opportunities' && renderOpportunities()}
+        {activeTab === 'bot' && <AutoTrader />}
       </div>
 
       <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>

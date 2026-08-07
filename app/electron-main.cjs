@@ -4,11 +4,23 @@ const { app, BrowserWindow, ipcMain, globalShortcut } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
-const { ScannerEngine, DEFAULT_TIMING, DEFAULT_COORDS } = require('./scanner.cjs');
+const { ScannerEngine, DEFAULT_TIMING } = require('./scanner.cjs');
+const { AutoTraderEngine } = require('./engine/auto_trader.cjs');
+
+const DEFAULT_COORDS = {
+  I_HAVE_SEARCH_BOX: { x: 0, y: 0 },
+  I_WANT_SEARCH_BOX: { x: 0, y: 0 },
+  TOP_SEARCH_RESULT: { x: 0, y: 0 },
+  I_HAVE_PRICE_BOX: { x: 0, y: 0 },
+  I_WANT_PRICE_BOX: { x: 0, y: 0 },
+  PLACE_ORDER_BTN: { x: 0, y: 0 },
+  CONFIRM_ORDER_BTN: { x: 0, y: 0 }
+};
 
 let mainWindow;
 let pythonProcess = null;
 const scanner = new ScannerEngine();
+const trader = new AutoTraderEngine();
 
 // ---- Settings helpers ----
 
@@ -170,6 +182,33 @@ ipcMain.handle('scanner:status', () => {
   return { isScanning: scanner.isScanning };
 });
 
+// ---- Auto Trader IPC ----
+
+trader.setUpdateCallback((type, data) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('trader:update', { type, data });
+  }
+});
+
+ipcMain.handle('trader:start', async (_, config) => {
+  if (trader.state !== 'IDLE' && trader.state !== 'STOPPED') return { status: 'already_running' };
+  const coords = loadSettings('ui_coordinates.json', DEFAULT_COORDS);
+  const timing = loadSettings('timing_settings.json', DEFAULT_TIMING);
+  const currencies = loadSettings('currency_registry.json', DEFAULT_CURRENCIES);
+  const targetItems = currencies.filter(c => c.enabled !== false && c.name !== 'Divine Orb' && c.name !== 'Chaos Orb');
+  trader.startLoop(targetItems, coords, timing, config);
+  return { status: 'started' };
+});
+
+ipcMain.handle('trader:stop', () => {
+  trader.stop();
+  return { status: 'stopped' };
+});
+
+ipcMain.handle('trader:status', () => {
+  return { state: trader.state, logs: trader.logs };
+});
+
 // ---- Headhunting bypass IPC ----
 
 ipcMain.handle('fetch-headhunting-bypass', async (event, url) => {
@@ -248,5 +287,6 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   scanner.stop();
+  trader.stop();
   if (pythonProcess) pythonProcess.kill();
 });

@@ -8,7 +8,9 @@ const COORD_KEYS = [
   'I_WANT_SEARCH_BOX',
   'TOP_SEARCH_RESULT',
   'I_HAVE_PRICE_BOX',
-  'I_WANT_PRICE_BOX'
+  'I_WANT_PRICE_BOX',
+  'PLACE_ORDER_BTN',
+  'CONFIRM_ORDER_BTN'
 ];
 
 export default function Scanner({ activeTab, headhuntingKey, setHeadhuntingKey, saveHeadhuntingKey }) {
