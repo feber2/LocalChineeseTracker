@@ -153,7 +153,6 @@ function App() {
   ];
 
   const PAGE_TITLES = {
-    dashboard: 'Live Market Dashboard',
     calibration: 'UI Coordinate Calibration',
     timing: 'Speed & Delays Configuration',
     currencies: 'Monitored Currency List',

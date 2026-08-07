@@ -233,9 +233,9 @@ class ScannerEngine {
 
       // Direction 2
       const rawHave2 = await this.readBoxValue(coords.I_HAVE_PRICE_BOX, timing);
-      if (this.stopRequested) return [dir1, null];
+      if (this.stopRequested) return [null, null];
       const rawWant2 = await this.readBoxValue(coords.I_WANT_PRICE_BOX, timing);
-      if (this.stopRequested) return [dir1, null];
+      if (this.stopRequested) return [null, null];
       const dir2 = parseRate(rawHave2, rawWant2);
 
       return [dir1, dir2];
