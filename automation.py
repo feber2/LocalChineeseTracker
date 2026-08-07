@@ -16,38 +16,41 @@ def execute(cmd):
     action = cmd.get('action', '')
 
     if action == 'ping':
+        pyautogui.keyUp('ctrl')
+        pyautogui.keyUp('alt')
+        pyautogui.keyUp('shift')
         return 'pong'
 
     elif action == 'click':
+        pyautogui.keyUp('ctrl')
+        pyautogui.keyUp('alt')
+        pyautogui.keyUp('shift')
         pyautogui.moveTo(cmd['x'], cmd['y'])
         time.sleep(0.04)
         pyautogui.click()
 
     elif action == 'ctrl_click':
+        pyautogui.keyUp('shift')
         pyautogui.moveTo(cmd['x'], cmd['y'])
         time.sleep(0.04)
         pyautogui.keyDown('ctrl')
-        try:
-            time.sleep(0.03)
-            pyautogui.click()
-            time.sleep(0.03)
-        finally:
-            pyautogui.keyUp('ctrl')
+        time.sleep(0.03)
+        pyautogui.click()
+        time.sleep(0.03)
+        pyautogui.keyUp('ctrl')
 
     elif action == 'type':
+        pyautogui.keyUp('ctrl')
         pyautogui.write(cmd['text'], interval=cmd.get('interval', 0.02))
 
     elif action == 'hotkey':
+        # Custom clean hotkey without touching Alt
         keys = cmd['keys']
-        pressed = []
-        try:
-            for k in keys:
-                pyautogui.keyDown(k)
-                pressed.append(k)
-            time.sleep(0.02)
-        finally:
-            for k in reversed(pressed):
-                pyautogui.keyUp(k)
+        for k in keys:
+            pyautogui.keyDown(k)
+        time.sleep(0.02)
+        for k in reversed(keys):
+            pyautogui.keyUp(k)
 
     elif action == 'press':
         pyautogui.press(cmd['key'])
@@ -78,14 +81,6 @@ def main():
             result = execute(cmd)
             print(json.dumps({'status': 'ok', 'result': result}), flush=True)
         except Exception as e:
-            # Acil Durum (Failsafe) Kurtarmasi:
-            # Eger script cokerse veya kullanici fareyi koseye cekerse (FailsafeException),
-            # modifier tuslari (Ctrl, Shift, Alt vb.) basili kalmasin diye zorla serbest birakiyoruz.
-            for key in ['ctrl', 'shift', 'alt']:
-                try:
-                    pyautogui.keyUp(key)
-                except:
-                    pass
             print(json.dumps({'status': 'error', 'message': str(e)}), flush=True)
 
 
