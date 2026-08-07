@@ -138,6 +138,31 @@ class AutoTraderEngine {
     return value || '';
   }
 
+  async clearBox(boxCoord, timing) {
+    if (!boxCoord || typeof boxCoord.x !== 'number') return;
+    await this.clickPoint(boxCoord, timing.click_delay * 1000);
+    await sleep(30);
+    await this.sendCommand({ action: 'press', key: 'backspace' });
+    await sleep(timing.swap_clear_delay * 1000 || 150);
+  }
+
+  async refreshPriceBoxes(coords, timing) {
+    // 1. Birini sil, sonra diğerini sil
+    await this.clearBox(coords.I_HAVE_PRICE_BOX, timing);
+    await this.clearBox(coords.I_WANT_PRICE_BOX, timing);
+    // 2. Bunu bir kere daha yap
+    await this.clearBox(coords.I_HAVE_PRICE_BOX, timing);
+    await this.clearBox(coords.I_WANT_PRICE_BOX, timing);
+    
+    // 3. Fiyatı iki kutucuğa sırayla birer kez sol tıkla
+    await this.clickPoint(coords.I_HAVE_PRICE_BOX, timing.click_delay * 1000);
+    await sleep(100);
+    await this.clickPoint(coords.I_WANT_PRICE_BOX, timing.click_delay * 1000);
+    
+    // Oyunun oranları doldurması için son bir kısa bekleme
+    await sleep(300);
+  }
+
   async setCurrencySlot(searchBox, topResult, keyword, timing) {
     if (!searchBox || typeof searchBox.x !== 'number') return;
     await this.clickPoint(searchBox, timing.click_delay * 1000);
@@ -198,6 +223,9 @@ class AutoTraderEngine {
       if (this.stopRequested) break;
       await this.setCurrencySlot(coords.I_WANT_SEARCH_BOX, coords.TOP_SEARCH_RESULT, currentItem.search_term, timing);
       if (this.stopRequested) break;
+      
+      // Kutu Temizleme ve Yenileme (Refresh Sequence)
+      await this.refreshPriceBoxes(coords, timing);
       await sleep(timing.ratio_load_delay * 1000);
       
       const cHaveStr = await this.readBoxValue(coords.I_HAVE_PRICE_BOX, timing.click_delay * 1000);
@@ -211,6 +239,9 @@ class AutoTraderEngine {
 
       await this.setCurrencySlot(coords.I_HAVE_SEARCH_BOX, coords.TOP_SEARCH_RESULT, 'Divine Orb', timing);
       if (this.stopRequested) break;
+      
+      // Kutu Temizleme ve Yenileme
+      await this.refreshPriceBoxes(coords, timing);
       await sleep(timing.ratio_load_delay * 1000);
       
       const dHaveStr = await this.readBoxValue(coords.I_HAVE_PRICE_BOX, timing.click_delay * 1000);
@@ -249,6 +280,9 @@ class AutoTraderEngine {
         await this.sendCommand({ action: 'ctrl_click', x: coords.I_HAVE_SEARCH_BOX.x, y: coords.I_HAVE_SEARCH_BOX.y }); 
         await sleep(300);
         await this.setCurrencySlot(coords.I_WANT_SEARCH_BOX, coords.TOP_SEARCH_RESULT, 'Divine Orb', timing);
+        
+        // Kutu Temizleme ve Yenileme
+        await this.refreshPriceBoxes(coords, timing);
         await sleep(timing.ratio_load_delay * 1000);
         
         const vHaveStr = await this.readBoxValue(coords.I_HAVE_PRICE_BOX, timing.click_delay * 1000);
