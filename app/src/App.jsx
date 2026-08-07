@@ -14,7 +14,20 @@ function App() {
 
   useEffect(() => {
     fetchHeadhuntingKey();
-  }, []);
+
+    if (window.require) {
+      const { ipcRenderer } = window.require('electron');
+      const f1Handler = () => {
+        if (activeTab === 'bot') {
+          ipcRenderer.invoke('trader:start');
+        } else {
+          ipcRenderer.invoke('scanner:start');
+        }
+      };
+      ipcRenderer.on('global:f1-pressed', f1Handler);
+      return () => ipcRenderer.removeListener('global:f1-pressed', f1Handler);
+    }
+  }, [activeTab]);
 
   const fetchHeadhuntingKey = async () => {
     try {

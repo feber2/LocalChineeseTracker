@@ -263,19 +263,28 @@ app.on('ready', () => {
   setTimeout(createWindow, pythonProcess ? 2000 : 0);
 
   globalShortcut.register('F1', () => {
-    if (!scanner.isScanning) {
-      const coords = loadSettings('ui_coordinates.json', DEFAULT_COORDS);
-      const timing = loadSettings('timing_settings.json', DEFAULT_TIMING);
-      const currencies = loadSettings('currency_registry.json', DEFAULT_CURRENCIES);
+    const coords = loadSettings('ui_coordinates.json', DEFAULT_COORDS);
+    const timing = loadSettings('timing_settings.json', DEFAULT_TIMING);
+    const currencies = loadSettings('currency_registry.json', DEFAULT_CURRENCIES);
+
+    if (trader.state !== 'IDLE' && trader.state !== 'STOPPED') return;
+    if (scanner.isScanning) return;
+
+    // Check active tab / mode
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('global:f1-pressed');
+    } else {
       scanner.scanLoop(currencies, coords, timing);
     }
   });
 
   globalShortcut.register('F2', () => {
     scanner.stop();
+    trader.stop();
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('scanner:update', { type: 'status', data: { message: 'STATUS: 🛑 STOPPED (F2)' } });
       mainWindow.webContents.send('scanner:update', { type: 'scan_finished', data: {} });
+      mainWindow.webContents.send('trader:update', { state: 'STOPPED' });
     }
   });
 });

@@ -181,7 +181,25 @@ class AutoTraderEngine {
     let itemIndex = 0;
     
     const minProfitC = config?.minProfitC || 10; 
-    const divineValC = config?.baseDivineRate || 200; 
+    let divineValC = config?.baseDivineRate || 200; 
+
+    // Live Benchmark: Check Divine Orb <-> Chaos Orb rate first
+    this.log('Benchmarking Divine Orb <-> Chaos Orb live price...');
+    await this.setCurrencySlot(coords.I_HAVE_SEARCH_BOX, coords.TOP_SEARCH_RESULT, 'Divine Orb', timing);
+    if (!this.stopRequested) {
+      await this.setCurrencySlot(coords.I_WANT_SEARCH_BOX, coords.TOP_SEARCH_RESULT, 'Chaos Orb', timing);
+    }
+    if (!this.stopRequested) {
+      await sleep(timing.ratio_load_delay * 1000);
+      const bHaveStr = await this.readBoxValue(coords.I_HAVE_PRICE_BOX, timing.click_delay * 1000);
+      const bWantStr = await this.readBoxValue(coords.I_WANT_PRICE_BOX, timing.click_delay * 1000);
+      const benchRate = parseRate(bHaveStr, bWantStr);
+      if (benchRate) {
+        if (benchRate.ratePerUnit > 1) divineValC = benchRate.ratePerUnit;
+        else if (benchRate.wantAmount > 1) divineValC = benchRate.wantAmount / (benchRate.haveAmount || 1);
+        this.log(`Live Divine Price: 1 Div = ${divineValC.toFixed(1)}c`, 'success');
+      }
+    }
     
     while (!this.stopRequested) {
       this.setState(TRADER_STATES.HUNTING);
