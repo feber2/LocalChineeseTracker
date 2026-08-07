@@ -4,7 +4,7 @@ import os
 REPORT_FILE = "market_report.md"
 
 
-def generate_market_report(records, base_divine_rate=180.0):
+def generate_market_report(records, base_divine_rate=180.0, report_file_path=REPORT_FILE):
     """
     Takes a list of scanned record dicts and generates a formatted Markdown report
     including step-by-step trade execution recipes for profitable loops.
@@ -59,9 +59,9 @@ def generate_market_report(records, base_divine_rate=180.0):
     report_content = "\n".join(md_lines)
 
     try:
-        with open(REPORT_FILE, "w", encoding="utf-8") as f:
+        with open(report_file_path, "w", encoding="utf-8") as f:
             f.write(report_content)
     except Exception as e:
-        print(f"[!] Error writing {REPORT_FILE}: {e}")
+        print(f"[!] Error writing {report_file_path}: {e}")
 
     return report_content

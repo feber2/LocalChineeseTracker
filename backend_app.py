@@ -41,6 +41,7 @@ COORDS_FILE = os.path.join(USER_DATA_DIR, "ui_coordinates.json")
 CURRENCY_FILE = os.path.join(USER_DATA_DIR, "currency_registry.json")
 TIMING_FILE = os.path.join(USER_DATA_DIR, "timing_settings.json")
 HEADHUNTING_FILE = os.path.join(USER_DATA_DIR, "headhunting_settings.json")
+REPORT_FILE = os.path.join(USER_DATA_DIR, "market_report.md")
 
 DEFAULT_TIMING = {
     "write_interval": 0.02,
@@ -235,7 +236,7 @@ class ScannerEngine:
                 await self.broadcast({"type": "record", "data": record})
                 
                 # Generate report md
-                reporter.generate_market_report(self.scanned_records, base_divine_rate)
+                reporter.generate_market_report(self.scanned_records, base_divine_rate, report_file_path=REPORT_FILE)
 
                 await asyncio.sleep(timing.get("pair_interval_delay", 0.20))
 
@@ -254,6 +255,16 @@ engine = ScannerEngine()
 @app.get("/api/status")
 def get_status():
     return {"is_scanning": engine.is_scanning}
+
+@app.get("/api/report")
+def get_report():
+    if os.path.exists(REPORT_FILE):
+        try:
+            with open(REPORT_FILE, "r", encoding="utf-8") as f:
+                return {"report": f.read()}
+        except Exception as e:
+            return {"report": f"Error loading report: {e}"}
+    return {"report": "1.0 Press F1 or START SCAN to begin live data extraction..."}
 
 @app.post("/api/start")
 async def start_scan():

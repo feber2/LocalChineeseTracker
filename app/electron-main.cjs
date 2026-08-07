@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 
@@ -128,6 +128,14 @@ app.on('ready', () => {
   startPythonBackend();
   // Wait a moment for python server to start before creating window
   setTimeout(createWindow, 2000);
+
+  globalShortcut.register('F1', () => {
+    fetch('http://127.0.0.1:8000/api/start', { method: 'POST' }).catch(err => console.error(err));
+  });
+
+  globalShortcut.register('F2', () => {
+    fetch('http://127.0.0.1:8000/api/stop', { method: 'POST' }).catch(err => console.error(err));
+  });
 });
 
 app.on('window-all-closed', () => {

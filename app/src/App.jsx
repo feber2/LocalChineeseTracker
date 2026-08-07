@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Activity, Play, Square, Settings, RefreshCw, Crosshair, Zap, Target } from 'lucide-react';
+import { Activity, Play, Square, Settings, RefreshCw, Crosshair, Zap, Target, List, FileText } from 'lucide-react';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 const WS_URL = 'ws://127.0.0.1:8000/ws/live';
@@ -15,6 +15,12 @@ function App() {
   // Settings State
   const [coords, setCoords] = useState({});
   const [timing, setTiming] = useState({});
+  const [currencies, setCurrencies] = useState([]);
+  const [report, setReport] = useState("Loading report...");
+
+  // Currency form state
+  const [newCurrencyName, setNewCurrencyName] = useState('');
+  const [newCurrencySearch, setNewCurrencySearch] = useState('');
 
   // Headhunting State
   const [headhuntingKey, setHeadhuntingKey] = useState('');
@@ -46,10 +52,24 @@ function App() {
       setCoords(await resC.json());
       const resT = await fetch(`${API_URL}/timing`);
       setTiming(await resT.json());
+      const resCur = await fetch(`${API_URL}/currencies`);
+      setCurrencies(await resCur.json());
+      const resRep = await fetch(`${API_URL}/report`);
+      const repData = await resRep.json();
+      setReport(repData.report);
       const resH = await fetch(`${API_URL}/headhunting_key`);
       const dataH = await resH.json();
       if(dataH && dataH.api_key) setHeadhuntingKey(dataH.api_key);
     } catch (e) {}
+  };
+
+  const saveCurrencies = async (newCurrencies) => {
+    await fetch(`${API_URL}/currencies`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(newCurrencies)
+    });
+    setCurrencies(newCurrencies);
   };
 
   const fetchOpportunities = async () => {
@@ -111,6 +131,7 @@ function App() {
           }
           return [msg.data, ...prev];
         });
+        fetch(`${API_URL}/report`).then(r => r.json()).then(d => setReport(d.report)).catch(()=>{});
       } else if (msg.type === 'error') {
         setStatusMessage(`ERROR: ${msg.message}`);
         setIsScanning(false);
@@ -343,6 +364,82 @@ function App() {
     </div>
   );
 
+  const renderCurrencies = () => (
+    <div className="content-area animate-fade">
+      <div className="glass" style={{padding: '20px', borderRadius: '12px', marginBottom: '20px'}}>
+        <div style={{display: 'flex', gap: '15px', alignItems: 'flex-end'}}>
+           <div className="settings-group" style={{ margin: 0, flex: 1 }}>
+             <label>Name</label>
+             <input type="text" placeholder="Currency Name" value={newCurrencyName} onChange={e=>setNewCurrencyName(e.target.value)} />
+           </div>
+           <div className="settings-group" style={{ margin: 0, flex: 1 }}>
+             <label>Search Term</label>
+             <input type="text" placeholder="Search String" value={newCurrencySearch} onChange={e=>setNewCurrencySearch(e.target.value)} />
+           </div>
+           <button className="btn-scan" style={{width: 'auto', padding: '0 20px', height: '39px'}} onClick={() => {
+              if(!newCurrencyName || !newCurrencySearch) return alert("Enter both Name and Search Term.");
+              const newList = [...currencies, {name: newCurrencyName, search_term: newCurrencySearch, enabled: true, category: "Custom"}];
+              saveCurrencies(newList);
+              setNewCurrencyName('');
+              setNewCurrencySearch('');
+           }}>+ Add Currency</button>
+        </div>
+      </div>
+      
+      <div className="table-container glass">
+        <table>
+          <thead>
+            <tr>
+              <th>Enabled</th>
+              <th>Name</th>
+              <th>Search Term</th>
+              <th>Category</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currencies.map((c, i) => (
+               <tr key={i} className="animate-fade">
+                 <td>{c.enabled ? "✔ Yes" : "❌ No"}</td>
+                 <td>{c.name}</td>
+                 <td>{c.search_term}</td>
+                 <td>{c.category || "General"}</td>
+                 <td>
+                   <button style={{marginRight: '5px', padding: '5px', cursor: 'pointer', background: 'var(--bg-panel)', color: 'var(--text-white)', border: '1px solid var(--border-color)', borderRadius: '4px'}} onClick={() => {
+                      const newList = [...currencies];
+                      newList[i].enabled = !newList[i].enabled;
+                      saveCurrencies(newList);
+                   }}>Toggle</button>
+                   <button style={{padding: '5px', cursor: 'pointer', background: '#2a1b24', color: '#ff4d4d', border: '1px solid var(--border-color)', borderRadius: '4px'}} onClick={() => {
+                      if(c.name === "Divine Orb" || c.name === "Chaos Orb") return alert("Cannot delete core currency.");
+                      const newList = currencies.filter((_, idx) => idx !== i);
+                      saveCurrencies(newList);
+                   }}>Delete</button>
+                 </td>
+               </tr>
+            ))}
+            {currencies.length === 0 && (
+              <tr><td colSpan="5" style={{textAlign: 'center', padding: '40px'}}>No currencies found.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const renderReport = () => (
+    <div className="content-area animate-fade" style={{height: '100%', minHeight: '500px', display: 'flex', flexDirection: 'column'}}>
+      <div className="glass" style={{padding: '20px', borderRadius: '12px', flex: 1, display: 'flex', flexDirection: 'column'}}>
+        <h2 style={{marginTop: 0, color: 'var(--accent-cyan)'}}>LIVE REPORT VIEW</h2>
+        <textarea 
+           readOnly 
+           value={report} 
+           style={{flex: 1, width: '100%', minHeight: '400px', background: 'var(--bg-card)', color: 'var(--text-white)', border: 'none', padding: '15px', fontFamily: 'Consolas, monospace', fontSize: '13px', borderRadius: '8px', resize: 'none', outline: 'none'}}
+        />
+      </div>
+    </div>
+  );
+
   return (
     <div className="app-container">
       <div className="glow-blob"></div>
@@ -359,6 +456,12 @@ function App() {
           </div>
           <div className={`nav-item ${activeTab === 'opportunities' ? 'active' : ''}`} onClick={() => setActiveTab('opportunities')}>
             <Target size={18} /> Opportunities
+          </div>
+          <div className={`nav-item ${activeTab === 'report' ? 'active' : ''}`} onClick={() => setActiveTab('report')}>
+            <FileText size={18} /> Live Report
+          </div>
+          <div className={`nav-item ${activeTab === 'currencies' ? 'active' : ''}`} onClick={() => setActiveTab('currencies')}>
+            <List size={18} /> Currencies
           </div>
           <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
             <Settings size={18} /> Configuration
@@ -380,11 +483,11 @@ function App() {
       <div className="main-content">
         <div className="topbar glass">
           <div className="page-title">
-            {activeTab === 'dashboard' ? 'Market Overview' : activeTab === 'opportunities' ? 'Profitable Opportunities' : 'System Configuration'}
+            {activeTab === 'dashboard' ? 'Market Overview' : activeTab === 'opportunities' ? 'Profitable Opportunities' : activeTab === 'report' ? 'Live Market Report' : activeTab === 'currencies' ? 'Currency Management' : 'System Configuration'}
           </div>
         </div>
         
-        {activeTab === 'dashboard' ? renderDashboard() : activeTab === 'opportunities' ? renderOpportunities() : renderSettings()}
+        {activeTab === 'dashboard' ? renderDashboard() : activeTab === 'opportunities' ? renderOpportunities() : activeTab === 'report' ? renderReport() : activeTab === 'currencies' ? renderCurrencies() : renderSettings()}
       </div>
       
       <style>{`
