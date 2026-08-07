@@ -207,6 +207,8 @@ class AutoTraderEngine {
     
     const minProfitC = config?.minProfitC || 10; 
     let divineValC = config?.baseDivineRate || 200; 
+    const maxChaosSpend = config?.maxChaosSpend || 500;
+    const maxDivineSpend = config?.maxDivineSpend || 2; 
 
     // Live Benchmark: Check Divine Orb <-> Chaos Orb rate first
     this.log('Benchmarking Divine Orb <-> Chaos Orb live price...');
@@ -277,6 +279,12 @@ class AutoTraderEngine {
       const costInChaos = itemLotSize * (chaosRate.haveAmount / chaosRate.wantAmount); 
       const revenueInChaos = divLotSize * divineValC; 
       const profit = revenueInChaos - costInChaos; 
+      
+      if (costInChaos > maxChaosSpend || divLotSize > maxDivineSpend) {
+        this.log(`Skipping ${currentItem.name}: Lot cost (${costInChaos.toFixed(0)}c / ${divLotSize}div) exceeds limits!`, 'warn');
+        itemIndex++;
+        continue;
+      }
       
       if (profit >= minProfitC) {
         this.log(`🔥 Arbitrage Found on ${currentItem.name}! Profit: +${profit.toFixed(1)}c`, 'success');

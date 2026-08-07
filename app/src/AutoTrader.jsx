@@ -5,7 +5,7 @@ const { ipcRenderer } = window.require('electron');
 export default function AutoTrader() {
   const [status, setStatus] = useState('IDLE');
   const [logs, setLogs] = useState([]);
-  const [config, setConfig] = useState({ minProfitC: 10, baseDivineRate: 200 });
+  const [config, setConfig] = useState({ minProfitC: 10, baseDivineRate: 200, maxChaosSpend: 500, maxDivineSpend: 2 });
 
   useEffect(() => {
     ipcRenderer.invoke('trader:status').then(({ state, logs: recentLogs }) => {
@@ -67,7 +67,8 @@ export default function AutoTrader() {
           </div>
         </div>
         
-        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+        
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Min Profit (C):</span>
             <input type="number" value={config.minProfitC} onChange={e => setConfig({...config, minProfitC: parseFloat(e.target.value)||0})} style={{ width: '60px', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-panel)', color: 'white' }} />
@@ -75,6 +76,14 @@ export default function AutoTrader() {
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Base Divine (C):</span>
             <input type="number" value={config.baseDivineRate} onChange={e => setConfig({...config, baseDivineRate: parseFloat(e.target.value)||0})} style={{ width: '60px', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-panel)', color: 'white' }} />
+          </div>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Max Chaos Spend:</span>
+            <input type="number" value={config.maxChaosSpend} onChange={e => setConfig({...config, maxChaosSpend: parseFloat(e.target.value)||0})} style={{ width: '60px', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-panel)', color: 'white' }} />
+          </div>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Max Div Spend:</span>
+            <input type="number" value={config.maxDivineSpend} onChange={e => setConfig({...config, maxDivineSpend: parseFloat(e.target.value)||0})} style={{ width: '60px', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-panel)', color: 'white' }} />
           </div>
           <button className={`btn-scan ${status !== 'IDLE' && status !== 'STOPPED' ? 'scanning' : ''}`} style={{ padding: '8px 24px', width: 'auto' }} onClick={toggleTrader}>
             {status !== 'IDLE' && status !== 'STOPPED' ? <><Square size={16} /> STOP</> : <><Play size={16} /> START</>}
