@@ -1,0 +1,26 @@
+{
+    "I_HAVE_SEARCH_BOX": {
+        "x": 907,
+        "y": 803
+    },
+    "I_HAVE_TOP_RESULT": {
+        "x": 1853,
+        "y": 548
+    },
+    "I_WANT_SEARCH_BOX": {
+        "x": 1816,
+        "y": 332
+    },
+    "I_WANT_TOP_RESULT": {
+        "x": 0,
+        "y": 0
+    },
+    "I_HAVE_PRICE_BOX": {
+        "x": 0,
+        "y": 0
+    },
+    "I_WANT_PRICE_BOX": {
+        "x": 0,
+        "y": 0
+    }
+}

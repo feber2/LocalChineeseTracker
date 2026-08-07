@@ -37,7 +37,8 @@ function createWindow() {
 
 function startPythonBackend() {
   const backendPath = path.join(__dirname, '..', 'backend_app.py');
-  pythonProcess = spawn('python', [backendPath]);
+  const userDataPath = app.getPath('userData');
+  pythonProcess = spawn('python', [backendPath, '--userdata', userDataPath]);
 
   pythonProcess.stdout.on('data', (data) => {
     console.log(`Python: ${data}`);

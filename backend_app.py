@@ -1,8 +1,10 @@
 import asyncio
 import json
 import os
+import sys
 import time
 import urllib.request
+import argparse
 import pyautogui
 import pyperclip
 import rate_parser
@@ -11,6 +13,15 @@ import reporter
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Body
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Any
+
+# Parse arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("--userdata", default=os.path.dirname(os.path.abspath(__file__)), help="Path to user data folder")
+args, unknown = parser.parse_known_args()
+USER_DATA_DIR = args.userdata
+
+# Ensure user data dir exists
+os.makedirs(USER_DATA_DIR, exist_ok=True)
 
 app = FastAPI()
 
@@ -26,10 +37,10 @@ app.add_middleware(
 pyautogui.FAILSAFE = True
 pyautogui.PAUSE = 0.05
 
-COORDS_FILE = "ui_coordinates.json"
-CURRENCY_FILE = "currency_registry.json"
-TIMING_FILE = "timing_settings.json"
-HEADHUNTING_FILE = "headhunting_settings.json"
+COORDS_FILE = os.path.join(USER_DATA_DIR, "ui_coordinates.json")
+CURRENCY_FILE = os.path.join(USER_DATA_DIR, "currency_registry.json")
+TIMING_FILE = os.path.join(USER_DATA_DIR, "timing_settings.json")
+HEADHUNTING_FILE = os.path.join(USER_DATA_DIR, "headhunting_settings.json")
 
 DEFAULT_TIMING = {
     "write_interval": 0.02,
